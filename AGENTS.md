@@ -20,6 +20,9 @@ Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação
   `SGTU_URL/tickets/novo?origem=<sistema>&rota=<path>` com `URLSearchParams` (nunca query
   bruta — XSS armazenado); `SGTU_URL` por env (`VITE_SGTU_URL` nos SPAs). O SGTU valida os
   dois: `origem` fora da allowlist cai para `sgtu`, `rota` fora do formato de path vira `null`.
+  **Revisão 2026-11-05:** nos vizinhos o link saiu do menu e virou pílula fixa à esquerda
+  (ícone 24 + rótulo "Ticket" — o ícone nunca é o único portador de informação), gateada pela
+  sessão. A navbar do SGTU não muda. Registrado em `../SGTU.md` §7.1 e `docs/08-interface.md`.
 - Onda 6 (dashboard) no ar: `GET /api/dashboard?dias=7|30|90` (só admin) lê o
   agregado `sgtu.vuso_diario` via `$queryRaw` — nunca a tabela raw. A view tem
   `erros_401`/`erros_503` por dia × sistema (migration `0004_dashboard_agregado`):

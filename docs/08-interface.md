@@ -44,3 +44,9 @@ de usuário vinda de URL de outro sistema e o SGTU valida os dois (allowlist de 
 formato de path para `rota`) sem nunca renderizar a query bruta.
 
 Código nos repos vizinhos: saga PR #4, sgoa PR #16, sgrf PR #23.
+
+**Revisão (2026-11-05):** nos três vizinhos o link não é mais item do menu — é uma pílula fixa à
+esquerda da tela (centro vertical; canto inferior esquerdo abaixo de 767 px), com ícone 24 + rótulo
+"Ticket" sempre visível, porque o ícone nunca é o único portador de informação. O gate de sessão e a
+montagem da URL são os mesmos. O SGTU mantém o link na própria navbar: aqui "Tickets" é uma seção,
+não um atalho de criação. Registrado em `../SGTU.md` §7.1.
