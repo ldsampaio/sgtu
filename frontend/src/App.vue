@@ -1,29 +1,24 @@
 <template>
   <header class="navbar">
-    <a class="marca" href="/">SGTU</a>
-    <nav>
-      <a class="ativo" href="/tickets">
+    <a class="marca" href="/tickets">SGTU</a>
+    <nav aria-label="Navegação principal">
+      <router-link to="/tickets">
         <Icon name="ticket" :size="16" /> Tickets
-      </a>
-      <a href="/dashboard">
+      </router-link>
+      <router-link to="/dashboard">
         <Icon name="chart-bar" :size="16" /> Dashboard
-      </a>
+      </router-link>
+      <router-link to="/meus-dados">
+        <Icon name="user" :size="16" /> Meus dados
+      </router-link>
+      <router-link to="/privacidade">
+        <Icon name="shield" :size="16" /> Privacidade
+      </router-link>
     </nav>
   </header>
 
   <main class="shell">
-    <div class="cartao cartao--larga">
-      <h1>SGTU</h1>
-      <p class="sub">
-        Wave 0 — design system (Light Clay herdado do SGOA). As telas de ticket entram na
-        onda 2 e o dashboard na onda 6.
-      </p>
-
-      <div class="linha-vazia">
-        <Icon name="info" :size="20" />
-        <span>Nenhum ticket ainda.</span>
-      </div>
-    </div>
+    <router-view />
   </main>
 </template>
 

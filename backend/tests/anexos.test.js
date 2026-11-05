@@ -71,6 +71,13 @@ describe('upload', () => {
 
     const eventos = db.estado.eventos;
     expect(eventos.filter((e) => e.tipo === 'anexo')).toHaveLength(2);
+
+    // O detalhe precisa do tipo: a página renderiza nome, tipo e tamanho.
+    const detalhe = await request(app)
+      .get(`/api/tickets/${ticket.id}`)
+      .set('Cookie', `saga_session=${signPara(autor)}`);
+    expect(detalhe.status).toBe(200);
+    expect(detalhe.body.anexos.map((a) => a.mime).sort()).toEqual(['application/pdf', 'image/png']);
   });
 
   it('SVG disfarçado de png é REJEITADO (sniff por magic bytes)', async () => {
