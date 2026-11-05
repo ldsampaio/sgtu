@@ -85,9 +85,12 @@ test('px cru só em breakpoint — dimensão de componente é token', () => {
 });
 
 test('nenhum style inline em componente ou página', () => {
+  // Exceção documentada no MASTER §3: o :style de percentual dos medidores é
+  // binding Vue a partir dos dados, não atributo literal. O lookbehind abaixo é
+  // o que registra essa exceção mecanicamente.
   const achados = [];
   for (const { nome, texto } of arquivosVue()) {
-    const m = texto.match(/style="[^"]*"/g);
+    const m = texto.match(/(?<!:)style="[^"]*"/g);
     if (m) achados.push(`${nome}: ${m.join(', ')}`);
   }
   assert.deepEqual(achados, [], achados.join(' | '));

@@ -163,6 +163,7 @@ export function mockDb() {
         if (where?.autorId) itens = itens.filter((t) => t.autorId === where.autorId);
         if (where?.status) itens = itens.filter((t) => t.status === where.status);
         if (where?.origem) itens = itens.filter((t) => t.origem === where.origem);
+        if (where?.abertoEm?.gte) itens = itens.filter((t) => t.abertoEm >= where.abertoEm.gte);
         itens.sort((a, b) => b.abertoEm - a.abertoEm);
         return itens.slice(0, take).map((t) => ({ ...t }));
       },
@@ -293,6 +294,44 @@ export function mockDb() {
     },
 
     $executeRaw: async () => true,
+
+    // Espelho da view materializada `sgtu.vuso_diario`: o teste não roda SQL,
+    // então o mock agrega `estado.telemetria` com a MESMA semântica da view
+    // (dia UTC × sistema, DISTINCT user_id, erros por `status_http`). Se a
+    // view mudar, este espelho muda junto — é o preço de testar agregação sem
+    // banco, e está registrado em ../SGTU.md §12.
+    $queryRaw: async (strings, ...params) => {
+      const desde = params[0];
+      const porDia = new Map();
+      for (const e of estado.telemetria) {
+        const dia = new Date(e.criadoEm).toISOString().slice(0, 10);
+        if (desde && new Date(`${dia}T00:00:00.000Z`) < desde) continue;
+        const chave = `${dia}|${e.sistema}`;
+        const linha = porDia.get(chave) || {
+          dia,
+          sistema: e.sistema,
+          eventos: 0,
+          usuarios: new Set(),
+          erros401: 0,
+          erros503: 0,
+        };
+        linha.eventos += 1;
+        linha.usuarios.add(e.userId);
+        if (e.evento === 'erro' && String(e.metadata?.status_http) === '401') linha.erros401 += 1;
+        if (e.evento === 'erro' && String(e.metadata?.status_http) === '503') linha.erros503 += 1;
+        porDia.set(chave, linha);
+      }
+      return [...porDia.values()]
+        .map((l) => ({
+          dia: l.dia,
+          sistema: l.sistema,
+          eventos: BigInt(l.eventos),
+          usuarios: BigInt(l.usuarios.size),
+          erros_401: BigInt(l.erros401),
+          erros_503: BigInt(l.erros503),
+        }))
+        .sort((a, b) => (b.dia < a.dia ? -1 : b.dia > a.dia ? 1 : a.sistema.localeCompare(b.sistema)));
+    },
 
     $transaction: async (fn) => fn(db),
   };

@@ -26,8 +26,8 @@ function createApp() {
   app.use('/api/tickets', require('./routes/tickets.routes'));
   app.use('/api/telemetry', require('./routes/telemetry.routes'));
 
-  // Onda 6+: agregado `vuso_diario` para o dashboard (leitura via $queryRaw).
-  // app.use('/api/dashboard', ...);
+  // Onda 6: agregado `vuso_diario` para o dashboard (leitura via $queryRaw).
+  app.use('/api/dashboard', require('./routes/dashboard.routes'));
 
   // Rotas /api desconhecidas respondem 404 JSON (não caem no fallback SPA).
   app.use('/api', (req, res) => res.status(404).json({ code: 'NOT_FOUND', message: 'Rota inexistente.' }));
