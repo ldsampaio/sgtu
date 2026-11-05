@@ -15,6 +15,9 @@ describe('SEC-02 Production gate on the session contract - Throw/No-throw matrix
 
   function limpaGate() {
     for (const chave of CHAVES_GATE) delete process.env[chave];
+    // O CI define INITIAL_ADMIN_LOGIN (ci-admin): a asserção do default
+    // ('ldsampaio') não pode depender do ambiente do runner.
+    delete process.env.INITIAL_ADMIN_LOGIN;
   }
 
   beforeEach(() => {
