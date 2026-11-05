@@ -17,6 +17,7 @@ const { authJwt, requireRole } = require('../middlewares/auth');
 const { validate } = require('../middlewares/validate');
 const prisma = require('../config/db');
 const dominio = require('../services/ticketsDomain');
+const notificacao = require('../services/notificacao');
 
 const router = express.Router();
 router.use(authJwt);
@@ -121,6 +122,10 @@ router.post('/', validate(criaSchema), async (req, res, next) => {
     });
 
     res.status(201).json({ ...criado, etiqueta: dominio.etiquetaDo(criado.numero) });
+
+    // Decisão H: notificação só da ABERTURA, e assíncrona — o usuário já foi
+    // confirmado. Falha de SMTP nunca chega na resposta.
+    notificacao.notificaAbertura(criado, req.user);
   } catch (e) {
     next(e);
   }

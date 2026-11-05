@@ -5,7 +5,7 @@ schema `sgtu`) + frontend Vue 3 + Vite (SPA), Light Clay herdado do SGOA. Dois p
 workspace** — rode comandos dentro de `backend/` ou `frontend/`.
 Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação em §13.
 
-## Estado atual (ondas 0–7 feitas; 8–9 pendentes)
+## Estado atual (ondas 0–8 feitas; 9 pendente)
 
 - Frontend (ondas 0 e 5): `cd frontend && npm install && npm test && npm run build`. `npm test`
   roda `node --test "tests/*.test.js"` — checklist do design system como teste, agora varrendo
@@ -28,8 +28,16 @@ Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação
   comparado por teste), `src/router.js` (fallback mantém o código na URL; só o path é guardado
   como destino), `App.vue` com navbar + sessão. Páginas: lista, detalhe, novo, meus dados,
   privacidade, erro, dashboard (placeholder da onda 6).
-- Backend (ondas 1–6): `cd backend && npm install && npx prisma generate && npx vitest run`
-  (88 testes). Boot: `node src/server.js` (:3003). Migrations à mão: `npx prisma migrate
+- Onda 8 (notificação, decisao H) no ar: `src/services/notificacao.js` notifica SÓ a
+  abertura de ticket, de forma assíncrona (a rota já respondeu 201 antes do envio), e
+  **nunca lança** — falha de SMTP vai para o log, não para o usuário. `SMTP_ENABLED=false`
+  por padrão; o gate SEC-02 exige HOST/USER/PASS/FROM/ADMIN_EMAIL quando ligado.
+  Destinatário: admin do SGTU (`sgtu.user_roles`); como `auth.users.email` é nullable,
+  `ADMIN_EMAIL` é o fallback — sem destinatário a notificação é pulada e registrada, não
+  inventada. Comentário **não** notifica. Nenhum segredo em log: só o erro truncado, nunca
+  o config do transport (`redact` cobre `pass`/`smtp_pass`).
+- Backend (ondas 1–8): `cd backend && npm install && npx prisma generate && npx vitest run`
+  (105 testes). Boot: `node src/server.js` (:3003). Migrations à mão: `npx prisma migrate
   deploy` (NUNCA `migrate dev`; FKs condicionais via `to_regclass`).
 - CI (`.github/workflows/ci.yml`): jobs `backend` + `frontend`; proteção da `main` exige os
   dois contextos (igual ao gate do sgrf).

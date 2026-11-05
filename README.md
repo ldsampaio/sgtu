@@ -58,4 +58,4 @@ frontend/
 | 5 | Frontend de tickets | ✅ |
 | 6 | Dashboard (medidores clay, sem biblioteca de gráficos) | ⏳ |
 | 7 | Ícone de ticket nas três interfaces (PR por repo) | ✅ |
-| 8 | Notificação por e-mail ao admin | ⏳ |
+| 8 | Notificação por e-mail ao admin | ✅ |
