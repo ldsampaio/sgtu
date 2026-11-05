@@ -48,6 +48,7 @@ export function resetEstado(db) {
   db.estado.mensagens.length = 0;
   db.estado.eventos.length = 0;
   db.estado.anexos.length = 0;
+  db.estado.telemetria.length = 0;
 }
 
 // Assinatura do JWT-ponteiro + sessão no Redis fake (o caminho do contrato).
@@ -98,6 +99,7 @@ export function mockDb() {
     mensagens: [], // { id, ticketId, autorId, corpo, interna, criadaEm }
     eventos: [], // { id, ticketId, atorId, tipo, detalhe, criadoEm }
     anexos: [],
+    telemetria: [], // { id, userId, sistema, evento, rota, metadata, criadoEm }
   };
 
   const db = {
@@ -237,6 +239,60 @@ export function mockDb() {
           .filter((a) => !where || a.ticketId === where.ticketId)
           .map((a) => ({ ...a })),
     },
+
+    telemetryEvent: {
+      create: async ({ data }) => {
+        const e = {
+          id: BigInt(estado.telemetria.length + 1),
+          userId: data.userId,
+          sistema: data.sistema,
+          evento: data.evento,
+          rota: data.rota ?? null,
+          metadata: { ...(data.metadata || {}) },
+          criadoEm: new Date(),
+        };
+        estado.telemetria.push(e);
+        return { ...e };
+      },
+      findFirst: async ({ where, orderBy }) => {
+        let itens = estado.telemetria;
+        if (where?.userId) itens = itens.filter((e) => e.userId === where.userId);
+        if (where?.criadoEm) {
+          if (where.criadoEm.gte) itens = itens.filter((e) => e.criadoEm >= where.criadoEm.gte);
+          if (where.criadoEm.lt) itens = itens.filter((e) => e.criadoEm < where.criadoEm.lt);
+        }
+        itens.sort((a, b) => (orderBy?.criadoEm === 'desc' ? b.criadoEm - a.criadoEm : a.criadoEm - b.criadoEm));
+        return itens[0] ? { ...itens[0] } : null;
+      },
+      findMany: async ({ where, orderBy, take }) => {
+        let itens = estado.telemetria;
+        if (where?.userId) itens = itens.filter((e) => e.userId === where.userId);
+        if (where?.criadoEm) {
+          if (where.criadoEm.gte) itens = itens.filter((e) => e.criadoEm >= where.criadoEm.gte);
+          if (where.criadoEm.lt) itens = itens.filter((e) => e.criadoEm < where.criadoEm.lt);
+        }
+        itens.sort((a, b) => (orderBy?.criadoEm === 'desc' ? b.criadoEm - a.criadoEm : a.criadoEm - b.criadoEm));
+        return (take ? itens.slice(0, take) : itens).map((e) => ({ ...e, metadata: { ...e.metadata } }));
+      },
+      count: async ({ where }) => {
+        let itens = estado.telemetria;
+        if (where?.userId) itens = itens.filter((e) => e.userId === where.userId);
+        if (where?.criadoEm) {
+          if (where.criadoEm.gte) itens = itens.filter((e) => e.criadoEm >= where.criadoEm.gte);
+          if (where.criadoEm.lt) itens = itens.filter((e) => e.criadoEm < where.criadoEm.lt);
+        }
+        return itens.length;
+      },
+      deleteMany: async ({ where }) => {
+        const antes = estado.telemetria.length;
+        if (where?.criadoEm?.lt) {
+          estado.telemetria = estado.telemetria.filter((e) => e.criadoEm >= where.criadoEm.lt);
+        }
+        return { count: antes - estado.telemetria.length };
+      },
+    },
+
+    $executeRaw: async () => true,
 
     $transaction: async (fn) => fn(db),
   };
