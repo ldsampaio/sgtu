@@ -25,6 +25,7 @@ import { join } from 'node:path';
 const RAIZ = join(import.meta.dirname, '..');
 const ESTILO = join(RAIZ, 'src', 'styles');
 const COMPONENTES = join(RAIZ, 'src', 'components');
+const PAGINAS = join(RAIZ, 'src', 'pages');
 const ESCALAS_ICON = [14, 16, 20, 24];
 const HEX = /#[0-9a-fA-F]{3,8}\b/g;
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2190}-\u{21FF}\u{2600}-\u{27BF}]/gu;
@@ -33,8 +34,16 @@ function arquivosEstilo() {
   return readdirSync(ESTILO).filter((f) => f.endsWith('.css')).sort();
 }
 
-function arquivosComponentes() {
-  return readdirSync(COMPONENTES).filter((f) => f.endsWith('.vue')).sort();
+// Wave 5: as páginas têm `<style scoped>`, então a disciplina de token vale
+// para componente E página — o checklist é teste, não lista.
+function arquivosVue() {
+  const achados = [];
+  for (const dir of [COMPONENTES, PAGINAS]) {
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.vue')).sort()) {
+      achados.push({ nome: `${dir.split('/').pop()}/${f}`, texto: readFileSync(join(dir, f), 'utf-8') });
+    }
+  }
+  return achados;
 }
 
 test('tokens.css existe e é o único lugar de hex', () => {
@@ -75,11 +84,19 @@ test('px cru só em breakpoint — dimensão de componente é token', () => {
   assert.deepEqual(violacoes, [], `px hardcoded: ${violacoes.join(' | ')}`);
 });
 
-test('nenhum style inline em componente', () => {
+test('nenhum style inline em componente ou página', () => {
   const achados = [];
-  for (const nome of arquivosComponentes()) {
-    const texto = readFileSync(join(COMPONENTES, nome), 'utf-8');
+  for (const { nome, texto } of arquivosVue()) {
     const m = texto.match(/style="[^"]*"/g);
+    if (m) achados.push(`${nome}: ${m.join(', ')}`);
+  }
+  assert.deepEqual(achados, [], achados.join(' | '));
+});
+
+test('nenhum hex em style scoped — token é a única fonte de cor', () => {
+  const achados = [];
+  for (const { nome, texto } of arquivosVue()) {
+    const m = texto.match(HEX);
     if (m) achados.push(`${nome}: ${m.join(', ')}`);
   }
   assert.deepEqual(achados, [], achados.join(' | '));
@@ -87,8 +104,7 @@ test('nenhum style inline em componente', () => {
 
 test('nenhum emoji como ícone estrutural', () => {
   const achados = [];
-  for (const nome of arquivosComponentes()) {
-    const texto = readFileSync(join(COMPONENTES, nome), 'utf-8');
+  for (const { nome, texto } of arquivosVue()) {
     const m = texto.match(EMOJI);
     if (m) achados.push(`${nome}: ${m.join(' ')}`);
   }
@@ -112,13 +128,29 @@ test('ícone decorativo é aria-hidden', () => {
 
 test('escalas de ícone são as do MASTER (14/16/20/24)', () => {
   const achados = [];
-  for (const nome of arquivosComponentes()) {
-    const texto = readFileSync(join(COMPONENTES, nome), 'utf-8');
+  for (const { nome, texto } of arquivosVue()) {
     for (const m of texto.matchAll(/:size="(\d+)"/g)) {
       if (!ESCALAS_ICON.includes(Number(m[1]))) achados.push(`${nome}: ${m[1]}`);
     }
   }
   assert.deepEqual(achados, [], `ícone fora das escalas: ${achados.join(', ')}`);
+});
+
+test('toda página especificada em design-system/sgtu/pages tem rota no router', () => {
+  const specs = join(RAIZ, '..', 'design-system', 'sgtu', 'pages');
+  const router = readFileSync(join(RAIZ, 'src', 'router.js'), 'utf-8');
+  const faltando = [];
+  for (const f of readdirSync(specs).filter((x) => x.endsWith('.md')).sort()) {
+    const linha = readFileSync(join(specs, f), 'utf-8').match(/\*\*Route:\*\* `([^`]+)`/);
+    if (!linha) continue;
+    const rota = linha[1];
+    if (rota === '*') {
+      if (!router.includes('pathMatch')) faltando.push(`${f}: fallback ausente`);
+      continue;
+    }
+    if (!router.includes(`'${rota}'`)) faltando.push(`${f}: ${rota}`);
+  }
+  assert.deepEqual(faltando, [], `rota de spec não está no router: ${faltando.join(', ')}`);
 });
 
 test('base.css cobre reduced-motion, [hidden] e foco visível', () => {

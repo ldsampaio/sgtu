@@ -208,7 +208,7 @@ router.get('/:id', async (req, res, next) => {
       responsavel: ticket.responsavelId ? nomes(ticket.responsavelId) : null,
       mensagens: mensagens.map((m) => ({ ...m, autor: nomes(idDe(m)) })),
       eventos: eventos.map((e) => ({ ...e, ator: nomes(idDe(e)) })),
-      anexos: anexos.map((a) => ({ id: a.id, nome: a.nome, bytes: a.bytes, criadoEm: a.criado_em ?? a.criadoEm })),
+      anexos: anexos.map((a) => ({ id: a.id, nome: a.nome, mime: a.mime, bytes: a.bytes, criadoEm: a.criado_em ?? a.criadoEm })),
     });
   } catch (e) {
     next(e);
