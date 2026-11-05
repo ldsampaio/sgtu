@@ -64,11 +64,14 @@ Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação
 - **`@vitejs/plugin-vue` precisa ser chamado**: `plugins: [vue()]` em `vite.config.js` — como
   referência crua o `.vue` cai no import-analysis e o build falha.
 - **`@phosphor-icons/vue` é `^2.2.1`** — a `^3.2.0` NÃO existe no npm.
+- **Node 22 não roda `node --test tests/` com barra final** — resolve o diretório como módulo
+  CJS (`MODULE_NOT_FOUND`); o script é `node --test "tests/*.test.js"` (Node 26 local aceitava
+  as duas formas — o bug só apareceu no CI).
 - **npm pode bloquear o postinstall do esbuild** por allowlist de scripts; sem ele o build do
   Vite falha em ambiente limpo (`npm install-scripts ls` para revisar).
 - **Tag de template dentro de comentário HTML quebra o parse** — no saga é Jinja; aqui o
-  equivalente é comentário Weirdo dentro de `.vue`: comente fora das tags de bloco
-  (`<!-- -->` entre blocos, `//`/`/* */` dentro do script/estilo), nunca dentro do template
-  declarativo de um atributo.
+  equivalente no `.vue`: comente **entre** blocos (`<!-- -->` fora de
+  `<template>`/`<script>`), `//`/`/* */` dentro de script/estilo, nunca dentro de um atributo
+  do template declarativo.
 - **Sem navegador headless no ambiente** — verificação visual em 375/768/1024/1440 é
   pendente; os breakpoints 767/1023 são exceções registradas no MASTER.
