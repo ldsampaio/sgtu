@@ -53,7 +53,7 @@ frontend/
 | 0 | Design system (Light Clay) + base + disciplina + CI | ✅ |
 | 1 | Backend core (sessão, RBBA base, health, gate SEC-02) | ✅ |
 | 2 | Tickets (CRUD, transições, mensagens, auditoria) | ✅ |
-| 3 | Anexos seguros (10/20 MB, allowlist, sem SVG) | ⏳ |
+| 3 | Anexos seguros (10/20 MB, allowlist, sem SVG) | ✅ |
 | 4 | Telemetria (beacon, allowlist, retenção 90 d, /me) | ⏳ |
 | 5 | Frontend de tickets | ⏳ |
 | 6 | Dashboard (medidores clay, sem biblioteca de gráficos) | ⏳ |

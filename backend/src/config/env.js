@@ -67,6 +67,9 @@ module.exports = {
   sessionCookieName: process.env.SESSION_COOKIE_NAME || 'saga_session',
   heartbeatKey: 'saga:heartbeat',
 
+  // Repositório de anexos em disco (onda 3). Default gitignored.
+  uploadsDir: process.env.UPLOADS_DIR || '',
+
   // Papéis do SGTU: ADMIN|USUARIO. O admin do sistema (`INITIAL_ADMIN_LOGIN`,
   // default `ldsampaio`) é ADMIN; todo usuário autenticado do saga é USUARIO
   // na primeira passagem pelo middleware (find-or-create).

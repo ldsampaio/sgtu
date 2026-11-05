@@ -341,6 +341,42 @@ router.post('/:id/mensagens', validate(mensagemSchema), async (req, res, next) =
   }
 });
 
+// Anexos (onda 3, decisão E): multer em memória + inspeção por magic bytes.
+// Limite plano: 10 MB/arquivo, 20 MB/ticket (soma), allowlist png|jpeg|webp|pdf
+// — **SVG proibido** (mesmo disfarçado: o que vale é o sniff, não o header).
+const multer = require('multer');
+const anexosUtil = require('../utils/anexos');
+const uploads = require('../config/uploads');
+
+const LIMITE_POR_ARQUIVO = 10 * 1024 * 1024; // 10 MB
+const LIMITE_POR_TICKET = 20 * 1024 * 1024; // 20 MB (soma dos anexos do ticket)
+const MAXIMO_DE_ARQUIVOS = 10; // multipart limit (plano: não vira depósito)
+
+const uploadMiddleware = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: LIMITE_POR_ARQUIVO, files: MAXIMO_DE_ARQUIVOS },
+}).array('anexos', MAXIMO_DE_ARQUIVOS);
+
+// Envelope do multer limit: 413 com código claro (não 500).
+function limiteMulter(next) {
+  return (err) => {
+    if (err instanceof multer.MulterError) {
+      const status = err.code === 'LIMIT_FILE_SIZE' || err.code === 'LIMIT_UNEXPECTED_FILE' ? 413 : 400;
+      return next(anexosErro(status, 'ANEXO_REJEITADO', err.code === 'LIMIT_FILE_SIZE'
+        ? 'Arquivo maior que 10 MB.'
+        : 'Muitos arquivos ou requisição inválida.'));
+    }
+    return next(err);
+  };
+}
+
+function anexosErro(status, code, message) {
+  const e = new Error(message || code);
+  e.status = status;
+  e.code = code;
+  return e;
+}
+
 // Trilha de auditoria isolada (a lista completa também vem no detalhe).
 router.get('/:id/eventos', async (req, res, next) => {
   try {
@@ -358,6 +394,131 @@ router.get('/:id/eventos', async (req, res, next) => {
     });
     const nomes = await dominio.carregaAutores(prisma, eventos.map((e) => e.atorId ?? e.ator_id));
     res.json({ itens: eventos.map((e) => ({ ...e, ator: nomes(e.atorId ?? e.ator_id) })) });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ── Anexos (onda 3) ──
+//
+// Regras (decisão E): 10 MB/arquivo, 20 MB/ticket (soma), allowlist
+// png|jpeg|webp|pdf por **magic bytes** (SVG disfarçado é rejeitado), nome em
+// disco hashado a partir do conteúdo, evento de auditoria na mesma transação,
+// download com `Content-Disposition: attachment` + `nosniff` (nada é servido
+// inline). O autor e o admin anexam; o mesmo escopo de leitura vale para baixar.
+
+router.post('/:id/anexos', (req, res, next) => {
+  uploadMiddleware(req, res, (err) => limiteMulter(next)(err));
+}, async (req, res, next) => {
+  try {
+    const arquivos = req.files || [];
+    if (!arquivos.length) {
+      return next(anexosErro(400, 'ANEXO_AUSENTE', 'Nenhum arquivo enviado.'));
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id } });
+    if (!ticket) return res.status(404).json({ code: 'NAO_ENCONTRADO', message: 'Ticket não encontrado.' });
+
+    const autorId = String(ticket.autor_id ?? ticket.autorId);
+    const proprio = autorId === req.user.id;
+    if (!proprio && !isAdmin(req)) {
+      return res.status(404).json({ code: 'NAO_ENCONTRADO', message: 'Ticket não encontrado.' });
+    }
+
+    // Sniff por arquivo: allowlist é por CONTEÚDO, não por header/nome.
+    const inspecionados = arquivos.map((f) => {
+      const mime = anexosUtil.sniff(f.buffer);
+      return { f, mime };
+    });
+    const rejeitados = inspecionados.filter((i) => !i.mime || !anexosUtil.MIMES.has(i.mime));
+    if (rejeitados.length) {
+      const nomes = rejeitados.map((i) => anexosUtil.nomeExibicao(i.f.originalname)).join(', ');
+      return next(anexosErro(
+        400,
+        'ANEXO_INVALIDO',
+        `Tipo de arquivo não permitido: ${nomes}. Aceitos: PNG, JPEG, WEBP e PDF.`,
+      ));
+    }
+
+    // Limite de soma por ticket: existentes + novos, sempre.
+    const existentes = await prisma.ticketAnexo.findMany({ where: { ticketId: ticket.id } });
+    const somaAtual = existentes.reduce((total, a) => total + Number(a.bytes || 0), 0);
+    const somaNovos = inspecionados.reduce((total, i) => total + Number(i.f.size || 0), 0);
+    if (somaAtual + somaNovos > LIMITE_POR_TICKET) {
+      return next(anexosErro(413, 'ANEXO_TICKET_CHEIO', 'O ticket já chegou a 20 MB de anexos.'));
+    }
+
+    // Gravação: nome hashado (sha256 do conteúdo); colisão de conteúdo é o
+    // MESMO arquivo — nada de nome do cliente no disco (path traversal).
+    const criados = [];
+    for (const { f, mime } of inspecionados) {
+      const nomeDisco = anexosUtil.caminhoHash(f.buffer, mime);
+      const caminho = uploads.caminhoNoDisco(nomeDisco);
+      if (!caminho) return next(anexosErro(500, 'ANEXO_ERRO', 'Falha ao preparar o anexo.'));
+      await uploads.grava(caminho, f.buffer);
+
+      const criado = await prisma.$transaction(async (tx) => {
+        const a = await tx.ticketAnexo.create({
+          data: {
+            ticketId: ticket.id,
+            autorId: req.user.id,
+            nome: anexosUtil.nomeExibicao(f.originalname),
+            caminho: nomeDisco,
+            mime,
+            bytes: Number(f.size || 0),
+          },
+        });
+        await dominio.registraEvento(tx, {
+          ticketId: ticket.id,
+          atorId: req.user.id,
+          tipo: 'anexo',
+          detalhe: { anexo: a.nome, bytes: a.bytes },
+        });
+        return a;
+      });
+      criados.push(criado);
+    }
+
+    res.status(201).json({
+      itens: criados.map((a) => ({ id: a.id, nome: a.nome, mime: a.mime, bytes: a.bytes })),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Download. Servido como ATTACHMENT (nunca inline) com o MIME sniffado na
+// gravação, nome de exibição como filename e nosniff: o browser não executa
+// nem renderiza — ele só oferece o download.
+router.get('/:id/anexos/:anexoId', async (req, res, next) => {
+  try {
+    const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id } });
+    if (!ticket) return res.status(404).json({ code: 'NAO_ENCONTRADO', message: 'Ticket não encontrado.' });
+
+    const autorId = String(ticket.autor_id ?? ticket.autorId);
+    const proprio = autorId === req.user.id;
+    if (!proprio && !isAdmin(req)) {
+      return res.status(404).json({ code: 'NAO_ENCONTRADO', message: 'Ticket não encontrado.' });
+    }
+
+    const anexo = await prisma.ticketAnexo.findUnique({ where: { id: req.params.anexoId } });
+    if (!anexo || String(anexo.ticketId) !== String(ticket.id)) {
+      return res.status(404).json({ code: 'NAO_ENCONTRADO', message: 'Anexo não encontrado.' });
+    }
+
+    const caminho = uploads.caminhoNoDisco(anexo.caminho);
+    if (!caminho) return res.status(404).json({ code: 'NAO_ENCONTRADO', message: 'Anexo não encontrado.' });
+
+    const bytes = await uploads.le(caminho).catch(() => null);
+    if (!bytes) return res.status(404).json({ code: 'NAO_ENCONTRADO', message: 'Anexo não encontrado.' });
+
+    res.set({
+      'Content-Type': anexo.mime,
+      'Content-Length': String(bytes.length),
+      'Content-Disposition': `attachment; filename="${anexo.nome.replace(/"/g, '')}"`,
+      'X-Content-Type-Options': 'nosniff',
+    });
+    return res.send(bytes);
   } catch (e) {
     next(e);
   }
