@@ -51,12 +51,11 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npx prisma generate
-      # O schema `auth` é do saga (a fonte é saga/db/schema.sql). Em CI o saga não
-      # roda, então o fixture cria `auth` no banco de teste ANTES de `migrate
-      # deploy` — a migration 0001 cria FK para auth.users incondicionalmente
-      # (o padrão condicional do sgrf vale para as migrations seguintes).
-      - run: psql "$DATABASE_URL" -f tests/fixtures/auth-schema.sql
+      # O schema `auth` é do saga (a fonte é saga/db/schema.sql). A migration 0001
+      # usa FK condicional (`to_regclass('auth.users')`), então `migrate deploy`
+      # roda ANTES do fixture; o schema `auth` entrar antes das suítes.
       - run: npx prisma migrate deploy
+      - run: psql "$DATABASE_URL" -f tests/fixtures/auth-schema.sql
       - run: npx vitest run
   frontend:
     name: frontend

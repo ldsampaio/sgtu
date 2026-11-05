@@ -8,6 +8,11 @@
 -- migrations do SGTU são escritas à mão e aplicadas com `migrate deploy`.
 --
 -- SGTU é só verifier nesta onda: a única tabela é o papel por sistema.
+--
+-- FK condicional (mesmo padrão do sgrf): `auth` não é desta migração. Quando
+-- `auth.users` já existe, a FK é criada; quando não (CI antes do fixture), a
+-- migration registra apenas a referência — por isso no CI o `prisma migrate
+-- deploy` pode rodar ANTES do fixture `tests/fixtures/auth-schema.sql`.
 
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "sgtu";
@@ -24,5 +29,12 @@ CREATE TABLE "sgtu"."user_roles" (
 -- CreateIndex
 CREATE INDEX "user_roles_user_id_idx" ON "sgtu"."user_roles"("user_id");
 
--- AddForeignKey
-ALTER TABLE "sgtu"."user_roles" ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- AddForeignKey — condicionais.
+DO $$
+BEGIN
+  IF to_regclass('auth.users') IS NOT NULL THEN
+    ALTER TABLE "sgtu"."user_roles"
+      ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id")
+      REFERENCES "auth"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+  END IF;
+END $$;
