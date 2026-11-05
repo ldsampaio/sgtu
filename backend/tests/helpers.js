@@ -117,6 +117,13 @@ export function mockDb() {
         Object.assign(linha, data);
         return linha;
       },
+      // Notificação (onda 8): o destinatário é resolvido pelos ADMIN ativos.
+      findMany: async ({ where }) => {
+        let itens = [...estado.userRoles.values()];
+        if (where?.role) itens = itens.filter((r) => r.role === where.role);
+        if (where?.status) itens = itens.filter((r) => r.status === where.status);
+        return itens.map((r) => ({ ...r }));
+      },
     },
 
     authUser: {
@@ -381,7 +388,9 @@ export function comRole(db, user, role, status = 'ATIVO') {
 }
 
 export function registrarUsuario(db, user) {
-  db.estado.authUsers.set(user.id, { id: user.id, login: user.login, name: user.name });
+  // `email` é nullable no schema (decisão H: o admin pode não ter e-mail) — o mock
+  // precisa carregar a coluna, senão a resolução do destinatário mente.
+  db.estado.authUsers.set(user.id, { id: user.id, login: user.login, name: user.name, email: user.email ?? null });
   return user;
 }
 

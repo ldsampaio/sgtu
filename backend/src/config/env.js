@@ -28,6 +28,15 @@ if (isProduction) {
   const redisUrl = (process.env.REDIS_URL || '').trim();
   if (redisUrl && !redisUrl.includes('saga_readonly')) offenders.push('REDIS_URL (ACL)');
 
+  // Notificação (decisão H): desligada por padrão. Quando LIGADA, o gate exige as
+  // variáveis — bootar com SMTP_ENABLED=true e config incompleto significa e-mail
+  // silenciosamente não enviado, que é pior que um erro no boot.
+  if (process.env.SMTP_ENABLED === 'true') {
+    for (const chave of ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'ADMIN_EMAIL']) {
+      if (isInsecureSecret(process.env[chave])) offenders.push(chave);
+    }
+  }
+
   if (offenders.length > 0) {
     throw new Error(
       `SEC-02: Production boot refused - insecure or invalid value(s) found in: ${offenders.join(', ')}. ` +
@@ -69,6 +78,22 @@ module.exports = {
 
   // Repositório de anexos em disco (onda 3). Default gitignored.
   uploadsDir: process.env.UPLOADS_DIR || '',
+
+  // Notificação (decisão H, onda 8). Desligada por padrão: o SGTU funciona sem
+  // e-mail. Mesma convenção de nomes do sgrf (deploy-prod.sh).
+  smtpEnabled: process.env.SMTP_ENABLED === 'true',
+  smtp: {
+    host: process.env.SMTP_HOST || '',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || '',
+  },
+  // Fallback explícito: `auth.users.email` é nullable, então o admin sem e-mail
+  // não receberia nada e ninguém avisaria. Sem ADMIN_EMAIL e sem e-mail de admin
+  // a notificação é pulada (registrada em log), não inventada.
+  adminEmail: process.env.ADMIN_EMAIL || '',
 
   // Papéis do SGTU: ADMIN|USUARIO. O admin do sistema (`INITIAL_ADMIN_LOGIN`,
   // default `ldsampaio`) é ADMIN; todo usuário autenticado do saga é USUARIO
