@@ -23,8 +23,10 @@ function createApp() {
 
   app.get('/health', (req, res) => res.json({ ok: true, service: 'sgtu-backend' }));
   app.use('/api/auth', require('./routes/auth.routes'));
+  app.use('/api/tickets', require('./routes/tickets.routes'));
 
-  // Wave 2+: app.use('/api/tickets', ...), app.use('/api/telemetry', ...).
+  // Onda 4+.
+  // app.use('/api/telemetry', require('./routes/telemetry.routes'));
 
   // Rotas /api desconhecidas respondem 404 JSON (não caem no fallback SPA).
   app.use('/api', (req, res) => res.status(404).json({ code: 'NOT_FOUND', message: 'Rota inexistente.' }));

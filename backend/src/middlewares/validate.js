@@ -2,6 +2,19 @@
 // nem conteúdo do request (T10) — o detalhe fica só no log.
 const logger = require('../config/logger');
 
+// Validação com zod — em `req.validated` (molde do sgrf). Falha é 400 com os
+// detalhes por campo; nada de handler validando na mão.
+function validate(schema) {
+  return (req, res, next) => {
+    const r = schema.safeParse({ body: req.body, query: req.query, params: req.params });
+    if (!r.success) {
+      return res.status(400).json({ code: 'VALIDACAO', message: 'Validação falhou.', details: r.error.flatten() });
+    }
+    req.validated = r.data;
+    next();
+  };
+}
+
 function errorHandler(err, req, res, next) {
   if (res.headersSent) return next(err);
 
@@ -18,4 +31,4 @@ function errorHandler(err, req, res, next) {
   return res.status(status).json(body);
 }
 
-module.exports = { errorHandler };
+module.exports = { validate, errorHandler };
