@@ -1,0 +1,176 @@
+// SGTU — Sistema de Gestão de Tickets dos Usuários.
+//
+// PROPRIEDADE DE SCHEMA (regra dura, igual ao sgrf — ver AGENTS.md):
+//   - `auth` é do SAGA. O Prisma do sgtu só LÊ auth.*. Nenhuma migration do
+//     sgtu cria ou altera tabela em `auth`. Os modelos de `auth` abaixo são
+//     read-only, declarados só para permitir o join de identidade.
+//   - `sgtu` é do sgtu. Toda migration do sgtu muda apenas `sgtu.*`.
+//
+// Enums como String + validação em código (zod) — mesma convenção do sgrf/sagoa.
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth", "sgtu"]
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Models read-only do schema `auth` (dono: saga; fonte `saga/db/schema.sql`).
+// O sgtu nunca escreve aqui — e sim o saga, no primeiro login.
+// ─────────────────────────────────────────────────────────────────────────
+model AuthUser {
+  id        String  @id @db.Uuid
+  login     String
+  name      String?
+  email     String?
+  roleBase  String  @map("role_base")
+  status    String
+  userRoles UserRole[]
+  tickets   Ticket[]
+  ticketsResponsavel Ticket[] @relation("responsavel")
+
+  @@schema("auth")
+  @@map("users")
+}
+
+model AuthProfile {
+  userId        String    @id @db.Uuid @map("user_id")
+  matricula     String?
+  curso         String?
+  programaPos   String?   @map("programa_pos")
+  departamento  String?
+  dataMatricula DateTime? @map("data_matricula") @db.Date
+
+  @@schema("auth")
+  @@map("user_profiles")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Schema `sgtu` (dono: sgtu)
+// ─────────────────────────────────────────────────────────────────────────
+// Papel POR SISTEMA (contrato de sessão, passo 6): o claim `role` do JWT
+// nunca é usado. SGTU tem só dois papéis: ADMIN | USUARIO.
+// Nenhuma credencial vive aqui (T10): senha, rate limit e bloqueio de login
+// são do saga.
+model UserRole {
+  userId String   @id @db.Uuid @map("user_id")
+  role   String // ADMIN|USUARIO
+  status String   @default("ATIVO") // ATIVO|INATIVO
+  user   AuthUser @relation(fields: [userId], references: [id])
+
+  @@schema("sgtu")
+  @@map("user_roles")
+}
+
+// Ticket aberto a partir de qualquer interface da plataforma (saga|sgoa|sgrf|sgtu).
+// `numero` é o rótulo humano: TKT-000123 (identity, nunca reutilizado).
+model Ticket {
+  id             String    @id @default(uuid()) @db.Uuid
+  numero         Int       @unique @default(autoincrement())
+  tipo           String // BUG|PROBLEMA|MELHORIA
+  titulo         String // 4..200
+  descricao      String // >= 10
+  origem         String // saga|sgoa|sgrf|sgtu (allowlist, validado em código)
+  rota           String? // path da interface de onde vem (validado em código)
+  prioridade     String    @default("NORMAL") // BAIXA|NORMAL|ALTA — só admin muda
+  status         String    @default("ABERTO") // ABERTO|EM_ANALISE|AGUARDANDO|RESOLVIDO|CANCELADO
+  // Transições (validadas em código): ABERTO→EM_ANALISE|CANCELADO; EM_ANALISE→AGUARDANDO|RESOLVIDO|CANCELADO;
+  // AGUARDANDO→EM_ANALISE|RESOLVIDO|CANCELADO. RESOLVIDO reabre só pelo admin; CANCELADO é terminal.
+  autorId        String    @db.Uuid @map("autor_id")
+  autor          AuthUser  @relation(fields: [autorId], references: [id])
+  responsavelId  String?   @db.Uuid @map("responsavel_id")
+  responsavel    AuthUser? @relation("responsavel", fields: [responsavelId], references: [id])
+  abertoEm       DateTime  @default(now()) @map("aberto_em")
+  atualizadoEm   DateTime  @default(now()) @updatedAt @map("atualizado_em")
+  fechadoEm      DateTime? @map("fechado_em")
+
+  mensagens TicketMensagem[]
+  eventos   TicketEvento[]
+  anexos    TicketAnexo[]
+
+  @@index([status, abertoEm])
+  @@index([autorId])
+  @@index([origem, abertoEm])
+  @@map("tickets")
+  @@schema("sgtu")
+}
+
+// Mensagens do ticket. `interna` = nota de admin: nunca exibida ao autor.
+model TicketMensagem {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @db.Uuid @map("ticket_id")
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  autorId   String   @db.Uuid @map("autor_id")
+  corpo     String
+  interna   Boolean  @default(false)
+  criadaEm  DateTime @default(now()) @map("criada_em")
+
+  @@index([ticketId, criadaEm])
+  @@map("ticket_mensagens")
+  @@schema("sgtu")
+}
+
+// Trilha de auditoria do ticket: quem mudou o quê. Server-side — nunca beacon
+// (risco 3 do plano): a auditoria não pode depender do best-effort da telemetria.
+model TicketEvento {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @db.Uuid @map("ticket_id")
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  atorId    String   @db.Uuid @map("ator_id")
+  tipo      String // criado|status|prioridade|responsavel|mensagem
+  detalhe   Json     @default("{}")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  @@index([ticketId, criadoEm])
+  @@map("ticket_eventos")
+  @@schema("sgtu")
+}
+
+// Anexos (decisão E): 10 MB/arquivo, 20 MB/ticket; allowlist png|jpeg|webp|pdf.
+// **SVG é proibido** (vetor de XSS servido inline). `caminho` é hash no disco —
+// nunca o nome enviado (path traversal). Apagar o ticket apaga o anexo (cascade).
+model TicketAnexo {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @db.Uuid @map("ticket_id")
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  autorId   String   @db.Uuid @map("autor_id")
+  nome      String // nome original, só para exibição
+  caminho   String // nome hashado no disco
+  mime      String
+  bytes     Int
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  @@index([ticketId])
+  @@map("ticket_anexos")
+  @@schema("sgtu")
+}
+
+// Invariantes da coleta (decisão A + §5 do plano):
+//   - proibido: credencial, senha, cookie, token de sessão, `sid` (T10);
+//   - proibido: conteúdo acadêmico — o evento descreve O USO, não o conteúdo;
+//   - proibido por padrão: IP, user-agent, fingerprint (decisão exige explícita).
+// `metadata` só aceita chaves de allowlist (rota, duracao_ms, status_http,
+// componente) — validado em código; chave fora → rejeita, não grava.
+model TelemetryEvent {
+  id        BigInt   @id @default(autoincrement())
+  userId    String   @db.Uuid @map("user_id")
+  sistema   String // saga|sgoa|sgrf|sgtu
+  evento    String // page_view|acao|erro|login|logout
+  rota      String?
+  metadata  Json     @default("{}")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  @@index([criadoEm])
+  @@index([sistema, criadoEm])
+  @@index([userId, criadoEm])
+  @@map("telemetry_events")
+  @@schema("sgtu")
+}
+
+// Tabelas NÃO NO SCHEMA PRISMA por decisão do plano §5: `vuso_diario` é uma
+// MATERIALIZED VIEW, criada em migration SQL — não como model (o Prisma não
+// modela view materializada; o dashboard lê via $queryRaw).
