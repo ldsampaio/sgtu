@@ -211,7 +211,8 @@
   --focus-outline: 3px solid rgba(79, 70, 229, 0.5);
   --focus-offset: 2px;
   --touch-min-target: 44px;
-  --grid-max-width: 640px;
+  --content-max-width: 836px;
+  --grid-max-width: var(--content-max-width);
   --grid-tile-min-width: 200px;
   --weave-stroke: 2px;
   --weave-gap: 14px;
