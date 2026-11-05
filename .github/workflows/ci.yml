@@ -1,10 +1,9 @@
 # SGTU — CI
-# Gate de regressão na main (plano §12 onda 0 + decisão G): mesmo molde do sgrf.
+# Gate de regressão na main (plano §12 + decisão G): mesmo molde do sgrf.
 #
-# DESVIO DOCUMENTADO: na onda 0 (design system) ainda não há código de backend, então
-# este workflow roda só o job `frontend`. O job `backend` (vitest + Postgres) entra na
-# onda 1, junto com o primeiro código — e a proteção de branch passará a exigir os dois
-# contextos (`backend`, `frontend`), igual ao gate do sgrf.
+# Histórico do desvio da onda 0: nasceu com só o job `frontend` (não havia código
+# de backend). A onda 1 adicionou o job `backend` — a proteção da `main` agora
+# exige os dois contextos (`backend` + `frontend`), igual ao gate do sgrf.
 name: CI
 on:
   push:
@@ -13,6 +12,51 @@ on:
 permissions:
   contents: read
 jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: sgtu
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://user:pass@localhost:5432/sgtu
+      # Contrato de sessão. O gate SEC-02 só dispara em NODE_ENV=production, então
+      # estes valores de teste passam; não há segredos de JWT próprios nem senha de
+      # admin. Redis e saga não rodam aqui: são a infra compartilhada.
+      REDIS_URL: redis://saga_readonly:ci-dummy@localhost:6379/0
+      SAGA_JWKS_URL: http://localhost:8000/.well-known/jwks.json
+      SAGA_LOGIN_URL: http://localhost:8000/login
+      PORTAL_ALLOWED_REDIRECT_HOSTS: localhost
+      INITIAL_ADMIN_LOGIN: ci-admin
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      # O schema `auth` é do saga (a fonte é saga/db/schema.sql). A migration 0001
+      # usa FK condicional (`to_regclass('auth.users')`), então `migrate deploy`
+      # roda ANTES do fixture; o schema `auth` entrar antes das suítes.
+      - run: npx prisma migrate deploy
+      - run: psql "$DATABASE_URL" -f tests/fixtures/auth-schema.sql
+      - run: npx vitest run
   frontend:
     name: frontend
     runs-on: ubuntu-latest
