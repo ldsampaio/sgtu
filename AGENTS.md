@@ -5,7 +5,7 @@ schema `sgtu`) + frontend Vue 3 + Vite (SPA), Light Clay herdado do SGOA. Dois p
 workspace** — rode comandos dentro de `backend/` ou `frontend/`.
 Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação em §13.
 
-## Estado atual (ondas 0–2 feitas; 3–8 pendentes)
+## Estado atual (ondas 0–3 feitas; 4–8 pendentes)
 
 - Frontend (onda 0): `cd frontend && npm install && npm test && npm run build`. `npm test`
   roda `node --test "tests/*.test.js"` — checklist do design system como teste.
@@ -14,6 +14,12 @@ Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação
   deploy` (NUNCA `migrate dev`; FKs condicionais via `to_regclass`).
 - CI (`.github/workflows/ci.yml`): jobs `backend` + `frontend`; proteção da `main` exige os
   dois contextos (igual ao gate do sgrf).
+- Onda 3 (anexos) no ar: `POST /api/tickets/:id/anexos` + download
+  `GET /api/tickets/:id/anexos/:anexoId`. Allowlist por **magic bytes**
+  (`src/utils/anexos.js`) — SVG disfarçado é rejeitado; 10 MB/arquivo,
+  20 MB/ticket pela soma; nome em disco é `sha256 + ext` (nunca o nome
+  enviado); download sempre `attachment` + `nosniff`. Disco por `UPLOADS_DIR`
+  (default `<backend>/uploads`, gitignored).
 - Onda 2 (tickets) no ar: `POST/GET /api/tickets`, `GET /:id`, `POST /:id/status`,
   `PATCH /:id` (admin: prioridade/responsável), `POST /:id/mensagens`, `GET /:id/eventos`.
   Domínio único em `src/services/ticketsDomain.js` (transições, allowlists, etiqueta);
