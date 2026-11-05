@@ -1,0 +1,31 @@
+# SGTU — CI
+# Gate de regressão na main (plano §12 onda 0 + decisão G): mesmo molde do sgrf.
+#
+# DESVIO DOCUMENTADO: na onda 0 (design system) ainda não há código de backend, então
+# este workflow roda só o job `frontend`. O job `backend` (vitest + Postgres) entra na
+# onda 1, junto com o primeiro código — e a proteção de branch passará a exigir os dois
+# contextos (`backend`, `frontend`), igual ao gate do sgrf.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build

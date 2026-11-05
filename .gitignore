@@ -1,0 +1,44 @@
+# Deps
+node_modules/
+
+# Build
+frontend/dist/
+backend/dist/
+
+# Env
+.env
+.env.deploy
+backend/.env
+frontend/.env.local
+frontend/.env.*.local
+!backend/.env.example
+
+# Anexos em disco (nome hashado; nunca versionar)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# SQLite local (não deveria existir — banco é Postgres — mas por segurança)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs / testes / OS
+*.log
+npm-debug.log*
+coverage/
+.vitest/
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# Runtime de agentes
+.opencode
