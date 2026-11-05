@@ -5,7 +5,7 @@ schema `sgtu`) + frontend Vue 3 + Vite (SPA), Light Clay herdado do SGOA. Dois p
 workspace** — rode comandos dentro de `backend/` ou `frontend/`.
 Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação em §13.
 
-## Estado atual (ondas 0–3 feitas; 4–8 pendentes)
+## Estado atual (ondas 0–4 feitas; 5–8 pendentes)
 
 - Frontend (onda 0): `cd frontend && npm install && npm test && npm run build`. `npm test`
   roda `node --test "tests/*.test.js"` — checklist do design system como teste.
@@ -14,6 +14,14 @@ Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação
   deploy` (NUNCA `migrate dev`; FKs condicionais via `to_regclass`).
 - CI (`.github/workflows/ci.yml`): jobs `backend` + `frontend`; proteção da `main` exige os
   dois contextos (igual ao gate do sgrf).
+- Onda 4 (telemetria) no ar: `POST /api/telemetry` (beacon) e
+  `GET /api/telemetry/me` (decisão B — só os eventos do próprio usuário,
+  período 7|30|90). Allowlist de `sistema`/`evento`/`metadata`
+  (`src/services/telemetryDomain.js`): chave fora → 400; chave de credencial/
+  sessão (`sid`, `token`, `cookie`, `senha`) → `METADATA_PROIBIDA` (T10).
+  Retenção 90 d: `src/jobs/telemetryRetention.js` (expurgo idempotente +
+  `REFRESH MATERIALIZED VIEW sgtu.vuso_diario`), rodando no boot; desligável
+  com `TELEMETRY_RETENCAO=none` em teste.
 - Onda 3 (anexos) no ar: `POST /api/tickets/:id/anexos` + download
   `GET /api/tickets/:id/anexos/:anexoId`. Allowlist por **magic bytes**
   (`src/utils/anexos.js`) — SVG disfarçado é rejeitado; 10 MB/arquivo,
