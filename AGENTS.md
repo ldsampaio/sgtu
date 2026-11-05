@@ -5,12 +5,17 @@ schema `sgtu`) + frontend Vue 3 + Vite (SPA), Light Clay herdado do SGOA. Dois p
 workspace** — rode comandos dentro de `backend/` ou `frontend/`.
 Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação em §13.
 
-## Estado atual (ondas 0–6 feitas; 7–9 pendentes)
+## Estado atual (ondas 0–7 feitas; 8–9 pendentes)
 
 - Frontend (ondas 0 e 5): `cd frontend && npm install && npm test && npm run build`. `npm test`
   roda `node --test "tests/*.test.js"` — checklist do design system como teste, agora varrendo
   `src/components/` **e** `src/pages/` (hex, px, style inline, emoji, escala de ícone) e
   conferindo que toda rota especificada em `design-system/sgtu/pages/*.md` está em `src/router.js`.
+- Onda 7 (link de ticket) no ar nas três interfaces — **código nos repos vizinhos**, não
+  aqui: saga PR #4, sgoa PR #16, sgrf PR #23. Todos montam
+  `SGTU_URL/tickets/novo?origem=<sistema>&rota=<path>` com `URLSearchParams` (nunca query
+  bruta — XSS armazenado); `SGTU_URL` por env (`VITE_SGTU_URL` nos SPAs). O SGTU valida os
+  dois: `origem` fora da allowlist cai para `sgtu`, `rota` fora do formato de path vira `null`.
 - Onda 6 (dashboard) no ar: `GET /api/dashboard?dias=7|30|90` (só admin) lê o
   agregado `sgtu.vuso_diario` via `$queryRaw` — nunca a tabela raw. A view tem
   `erros_401`/`erros_503` por dia × sistema (migration `0004_dashboard_agregado`):
