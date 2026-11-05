@@ -5,20 +5,26 @@ schema `sgtu`) + frontend Vue 3 + Vite (SPA), Light Clay herdado do SGOA. Dois p
 workspace** — rode comandos dentro de `backend/` ou `frontend/`.
 Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação em §13.
 
-## Estado atual (ondas 0–5 feitas; 6–9 pendentes)
+## Estado atual (ondas 0–6 feitas; 7–9 pendentes)
 
 - Frontend (ondas 0 e 5): `cd frontend && npm install && npm test && npm run build`. `npm test`
   roda `node --test "tests/*.test.js"` — checklist do design system como teste, agora varrendo
   `src/components/` **e** `src/pages/` (hex, px, style inline, emoji, escala de ícone) e
   conferindo que toda rota especificada em `design-system/sgtu/pages/*.md` está em `src/router.js`.
+- Onda 6 (dashboard) no ar: `GET /api/dashboard?dias=7|30|90` (só admin) lê o
+  agregado `sgtu.vuso_diario` via `$queryRaw` — nunca a tabela raw. A view tem
+  `erros_401`/`erros_503` por dia × sistema (migration `0004_dashboard_agregado`):
+  o spec exige os dois códigos como linhas separadas por sistema. `usuariosDiaMax`
+  é o máximo de usuários únicos em um dia — o agregado não permite contar pessoas
+  ao longo do período, e a interface rotula o número assim.
 - Onda 5 (frontend de tickets) no ar: `src/api.js` (cliente com `query`/`apiForm` + `traduzErro`
   com a copy literal de `error.md`), `src/beacon.js` (best-effort, nunca propaga),
   `src/domain/transicoes.js` (espelho cliente — autoridade é `backend/src/services/ticketsDomain.js`,
   comparado por teste), `src/router.js` (fallback mantém o código na URL; só o path é guardado
   como destino), `App.vue` com navbar + sessão. Páginas: lista, detalhe, novo, meus dados,
   privacidade, erro, dashboard (placeholder da onda 6).
-- Backend (ondas 1–4): `cd backend && npm install && npx prisma generate && npx vitest run`
-  (78 testes). Boot: `node src/server.js` (:3003). Migrations à mão: `npx prisma migrate
+- Backend (ondas 1–6): `cd backend && npm install && npx prisma generate && npx vitest run`
+  (88 testes). Boot: `node src/server.js` (:3003). Migrations à mão: `npx prisma migrate
   deploy` (NUNCA `migrate dev`; FKs condicionais via `to_regclass`).
 - CI (`.github/workflows/ci.yml`): jobs `backend` + `frontend`; proteção da `main` exige os
   dois contextos (igual ao gate do sgrf).

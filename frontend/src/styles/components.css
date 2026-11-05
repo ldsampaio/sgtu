@@ -551,3 +551,13 @@
   align-items: center;
   gap: var(--spacing-2);
 }
+
+/* KPI em tile pastel: numero em --size-2xl + rotulo em texto — nunca numero
+   colorido isolado. */
+.kpi-numero {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--size-2xl);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
