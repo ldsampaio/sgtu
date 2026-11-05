@@ -1,6 +1,6 @@
 // Domínio de telemetria (decisões A/B/C/D do plano §11).
 //
-// Minimização SEM códigoEncapsulamento pelo lado do schema: nada de IP,
+// Minimização pelo lado do schema: nada de IP,
 // user-agent, fingerprint ou `sid` — as colunas não existem. O que entra aqui
 // é validado por allowlist; chave ou valor fora → o evento é rejeitado (400),
 // não gravado com o córtex limpo.
