@@ -5,15 +5,20 @@ schema `sgtu`) + frontend Vue 3 + Vite (SPA), Light Clay herdado do SGOA. Dois p
 workspace** — rode comandos dentro de `backend/` ou `frontend/`.
 Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação em §13.
 
-## Estado atual (onda 0 feita; 1–8 pendentes)
+## Estado atual (ondas 0–2 feitas; 3–8 pendentes)
 
-- **Só o design system existe.** Não há backend, rotas, schema Prisma nem router ainda — não
-  invente comandos de backend (`cd backend && npx vitest run` falha até a onda 1).
-- Frontend: `cd frontend && npm install && npm test && npm run build`. `npm test` roda
-  `node --test tests/` — é o checklist do design system como teste.
-- CI (`.github/workflows/ci.yml`): **só job `frontend`** na onda 0 (desvio documentado — não
-  há o que testar no backend). O job `backend` entra na onda 1 e a proteção da `main`
-  passará a exigir os dois contextos, igual ao gate do sgrf.
+- Frontend (onda 0): `cd frontend && npm install && npm test && npm run build`. `npm test`
+  roda `node --test "tests/*.test.js"` — checklist do design system como teste.
+- Backend (ondas 1–2): `cd backend && npm install && npx prisma generate && npx vitest run`
+  (55 testes). Boot: `node src/server.js` (:3003). Migrations à mão: `npx prisma migrate
+  deploy` (NUNCA `migrate dev`; FKs condicionais via `to_regclass`).
+- CI (`.github/workflows/ci.yml`): jobs `backend` + `frontend`; proteção da `main` exige os
+  dois contextos (igual ao gate do sgrf).
+- Onda 2 (tickets) no ar: `POST/GET /api/tickets`, `GET /:id`, `POST /:id/status`,
+  `PATCH /:id` (admin: prioridade/responsável), `POST /:id/mensagens`, `GET /:id/eventos`.
+  Domínio único em `src/services/ticketsDomain.js` (transições, allowlists, etiqueta);
+  RBBA: fora de escopo lê 404, transição inválida 403, payload inválido 400; auditoria em
+  `sgtu.ticket_eventos` na MESMA transação da mudança.
 
 ## Portas e vizinhos
 
