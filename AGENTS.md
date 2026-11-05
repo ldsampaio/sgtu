@@ -5,12 +5,16 @@ schema `sgtu`) + frontend Vue 3 + Vite (SPA), Light Clay herdado do SGOA. Dois p
 workspace** — rode comandos dentro de `backend/` ou `frontend/`.
 Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação em §13.
 
-## Estado atual (ondas 0–8 feitas; 9 pendente)
+## Estado atual (ondas 0–9 feitas — beta completo)
 
 - Frontend (ondas 0 e 5): `cd frontend && npm install && npm test && npm run build`. `npm test`
-  roda `node --test "tests/*.test.js"` — checklist do design system como teste, agora varrendo
+  roda `node --test "tests/*.test.js"` (29 testes) — checklist do design system como teste, varrendo
   `src/components/` **e** `src/pages/` (hex, px, style inline, emoji, escala de ícone) e
   conferindo que toda rota especificada em `design-system/sgtu/pages/*.md` está em `src/router.js`.
+- Documentação: `docs/` numerada (visão, contrato de sessão, permissões, modelo de dados,
+  API, anexos, telemetria e privacidade, notificação, interface, critérios de aceite, runbook).
+  Claims conferidos contra o código; o que é pendente de navegador está declarado em
+  `docs/09-criterios-de-aceite.md` — não há navegador headless neste ambiente.
 - Onda 7 (link de ticket) no ar nas três interfaces — **código nos repos vizinhos**, não
   aqui: saga PR #4, sgoa PR #16, sgrf PR #23. Todos montam
   `SGTU_URL/tickets/novo?origem=<sistema>&rota=<path>` com `URLSearchParams` (nunca query
