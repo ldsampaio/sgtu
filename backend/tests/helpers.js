@@ -214,6 +214,24 @@ export function mockDb() {
     },
 
     ticketAnexo: {
+      create: async ({ data }) => {
+        const a = {
+          id: randomUUID(),
+          ticketId: data.ticketId,
+          autorId: data.autorId,
+          nome: data.nome,
+          caminho: data.caminho,
+          mime: data.mime,
+          bytes: data.bytes,
+          criadoEm: new Date(),
+        };
+        estado.anexos.push(a);
+        return { ...a };
+      },
+      findUnique: async ({ where }) => {
+        const achado = estado.anexos.find((a) => a.id === where.id);
+        return achado ? { ...achado } : null;
+      },
       findMany: async ({ where }) =>
         estado.anexos
           .filter((a) => !where || a.ticketId === where.ticketId)
