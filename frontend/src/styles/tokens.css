@@ -212,6 +212,7 @@
   --focus-offset: 2px;
   --touch-min-target: 44px;
   --content-max-width: 836px;
+  --content-ceiling: calc(var(--content-max-width) + 2 * var(--spacing-4));
   --grid-max-width: var(--content-max-width);
   --grid-tile-min-width: 200px;
   --weave-stroke: 2px;

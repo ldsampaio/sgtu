@@ -8,10 +8,10 @@
 /* ===== Shell ===== */
 .shell {
   padding: var(--spacing-4);
-  /* Teto de largura: soma dos componentes da linha mais larga do dashboard
-     (4 tiles de 200 + 3 gaps de 12 = 836) mais o padding do shell. O cabeçalho
-     usa o mesmo teto, então o título não estica até a tela inteira. */
-  max-width: calc(var(--content-max-width) + 2 * var(--spacing-4));
+  /* Teto de largura (--content-ceiling): soma dos componentes da linha mais larga
+     do dashboard (4 tiles de 200 + 3 gaps de 12 = 836) mais o padding do shell. O
+     cabeçalho usa o mesmo token, então o título não estica até a tela inteira. */
+  max-width: var(--content-ceiling);
   margin: 0 auto;
 }
 
@@ -240,9 +240,9 @@
   justify-content: space-between;
   gap: var(--spacing-2);
   min-height: var(--navbar-height);
-  /* Mesmo teto do shell — o cabeçalho alinha com a coluna de conteúdo. */
+  /* Teto de largura (--content-ceiling), o mesmo do shell. */
   width: calc(100% - 2 * var(--spacing-4));
-  max-width: calc(var(--content-max-width) + 2 * var(--spacing-4));
+  max-width: var(--content-ceiling);
   margin: var(--navbar-sticky-top) auto 0;
   padding: 0 var(--spacing-3);
   background: var(--navbar-bg);
@@ -456,7 +456,8 @@
 /* ===== Breakpoints (exceção registrada no MASTER: não são tokens) ===== */
 @media (max-width: 767px) {
   .navbar {
-    margin: var(--navbar-sticky-top) var(--spacing-3) 0;
+    width: calc(100% - 2 * var(--spacing-3));
+    margin: var(--navbar-sticky-top) auto 0;
     flex-wrap: wrap;
   }
 
