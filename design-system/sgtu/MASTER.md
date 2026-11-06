@@ -154,8 +154,9 @@ Verificado por teste em `frontend/tests/designSystem.test.js` — o checklist é
 - [x] `prefers-reduced-motion` respeitado (`base.css`)
 - [x] `[hidden]` com `display: none !important` (componentes clay são `display:flex`)
 - [x] States disabled/loading/empty estilizados (`.botao:disabled`, `.spinner`, `.linha-vazia`)
-- [ ] Testado visualmente em 375 / 768 / 1024 / 1440 px — **pendência de ambiente**: não há
-      navegador headless. Cobertura estática dos breakpoints 767/1023.
+- [x] Testado visualmente em 375 / 768 / 1024 / 1440 px — medido em navegador real por
+      `sa/scripts/headless` (Playwright): `.navbar` e `.shell` medem o teto de 1080 em 1440
+      e o viewport em 375/768/1024. Breakpoints 767/1023 cobertos.
 
 **Exceções registradas** (dimensões de layout que não são tokens): breakpoints 767/1023px.
 Tudo o mais vem de token. `validate-tokens.cjs` deve reportar exatamente essas duas.

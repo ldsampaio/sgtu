@@ -13,8 +13,8 @@ Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação
   conferindo que toda rota especificada em `design-system/sgtu/pages/*.md` está em `src/router.js`.
 - Documentação: `docs/` numerada (visão, contrato de sessão, permissões, modelo de dados,
   API, anexos, telemetria e privacidade, notificação, interface, critérios de aceite, runbook).
-  Claims conferidos contra o código; o que é pendente de navegador está declarado em
-  `docs/09-criterios-de-aceite.md` — não há navegador headless neste ambiente.
+  Claims conferidos contra o código; o que era pendente de navegador está verificado por
+  `sa/scripts/headless` (Playwright), o harness compartilhado dos três sistemas.
 - Onda 7 (link de ticket) no ar nas três interfaces — **código nos repos vizinhos**, não
   aqui: saga PR #4, sgoa PR #16, sgrf PR #23. Todos montam
   `SGTU_URL/tickets/novo?origem=<sistema>&rota=<path>` com `URLSearchParams` (nunca query
@@ -129,5 +129,6 @@ Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação
   equivalente no `.vue`: comente **entre** blocos (`<!-- -->` fora de
   `<template>`/`<script>`), `//`/`/* */` dentro de script/estilo, nunca dentro de um atributo
   do template declarativo.
-- **Sem navegador headless no ambiente** — verificação visual em 375/768/1024/1440 é
-  pendente; os breakpoints 767/1023 são exceções registradas no MASTER.
+- **Navegador headless**: `sa/scripts/headless` (Playwright, compartilhado com sgoa e sgrf)
+  roda os builds e mede 375/768/1024/1440. Os breakpoints 767/1023 seguem sendo exceções
+  registradas no MASTER.
