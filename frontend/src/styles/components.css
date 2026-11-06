@@ -8,9 +8,10 @@
 /* ===== Shell ===== */
 .shell {
   padding: var(--spacing-4);
-  /* Teto de largura (--content-ceiling): soma dos componentes da linha mais larga
-     do dashboard (4 tiles de 200 + 3 gaps de 12 = 836) mais o padding do shell. O
-     cabeçalho usa o mesmo token, então o título não estica até a tela inteira. */
+  /* Teto de largura (--content-ceiling): 1080 px é a largura total da interface, o
+     mesmo teto de sgoa e sgrf. A coluna de conteúdo (--content-max-width) é o teto
+     menos o padding do shell; o cabeçalho usa o mesmo token, então o título não
+     estica até a tela inteira. */
   max-width: var(--content-ceiling);
   margin: 0 auto;
 }

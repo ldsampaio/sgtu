@@ -22,7 +22,8 @@ Plano autorizado: `../SGTU.md` (raiz de sa/). Ondas em §12; gate de aceitação
   dois: `origem` fora da allowlist cai para `sgtu`, `rota` fora do formato de path vira `null`.
   **Revisão 2026-11-05:** nos vizinhos o link saiu do menu e virou pílula fixa **dentro do teto de
   largura** de cada plataforma — o lado direito encosta na coluna de conteúdo (centro vertical);
-  canto inferior da coluna quando a calha esquerda não a comporta (saga 1023, sgoa 1279, sgrf 1519).
+  canto inferior da coluna quando a calha esquerda não a comporta (saga 1023, sgoa 1287, sgrf 1339
+  — sobre o teto compartilhado de 1080 px).
   (Ícone 24 + rótulo "Ticket" — o ícone nunca é o único portador de informação), gateada pela
   sessão. A navbar do SGTU não muda. Registrado em `../SGTU.md` §7.1 e `docs/08-interface.md`.
 - Onda 6 (dashboard) no ar: `GET /api/dashboard?dias=7|30|90` (só admin) lê o

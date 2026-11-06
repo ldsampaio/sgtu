@@ -48,7 +48,7 @@ Código nos repos vizinhos: saga PR #4, sgoa PR #16, sgrf PR #23.
 **Revisão (2026-11-05):** nos três vizinhos o link não é mais item do menu — é uma pílula fixa
 **dentro do teto de largura** de cada plataforma: o lado direito encosta na coluna de conteúdo
 (centro vertical), então ela fica à esquerda do bloco e não no extremo da tela; desce para o canto
-inferior da coluna quando a calha esquerda não a comporta (saga 1023 px, sgoa 1279 px,
-sgrf 1519 px). Ícone 24 + rótulo "Ticket" sempre visível, porque o ícone nunca é o único portador
+inferior da coluna quando a calha esquerda não a comporta (saga 1023 px, sgoa 1287 px,
+sgrf 1339 px — sobre o teto compartilhado de 1080 px). Ícone 24 + rótulo "Ticket" sempre visível, porque o ícone nunca é o único portador
 de informação. O gate de sessão e a montagem da URL são os mesmos. O SGTU mantém o link na própria
 navbar: aqui "Tickets" é uma seção, não um atalho de criação. Registrado em `../SGTU.md` §7.1.

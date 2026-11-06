@@ -211,8 +211,8 @@
   --focus-outline: 3px solid rgba(79, 70, 229, 0.5);
   --focus-offset: 2px;
   --touch-min-target: 44px;
-  --content-max-width: 836px;
-  --content-ceiling: calc(var(--content-max-width) + 2 * var(--spacing-4));
+  --content-max-width: calc(var(--content-ceiling) - 2 * var(--spacing-4));
+  --content-ceiling: 1080px;
   --grid-max-width: var(--content-max-width);
   --grid-tile-min-width: 200px;
   --weave-stroke: 2px;
