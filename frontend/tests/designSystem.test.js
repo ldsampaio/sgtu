@@ -14,6 +14,8 @@
  *  - ícone decorativo é aria-hidden;
  *  - escalas de ícone fixas 14/16/20/24;
  *  - prefers-reduced-motion e :focus-visible respeitados;
+ *  - navbar e shell alinham no mesmo teto de largura (--content-ceiling), o teto
+ *    compartilhado de 1080 px com sgoa e sgrf;
  *  - tokens.css coerente com design/tokens.json.
  */
 
@@ -154,6 +156,24 @@ test('toda página especificada em design-system/sgtu/pages tem rota no router',
     if (!router.includes(`'${rota}'`)) faltando.push(`${f}: ${rota}`);
   }
   assert.deepEqual(faltando, [], `rota de spec não está no router: ${faltando.join(', ')}`);
+});
+
+test('navbar e shell alinham no mesmo teto de largura (--content-ceiling)', () => {
+  const tokens = readFileSync(join(ESTILO, 'tokens.css'), 'utf-8');
+  const css = readFileSync(join(ESTILO, 'components.css'), 'utf-8');
+  assert.ok(tokens.includes('--content-ceiling'), 'token de teto de largura ausente');
+  // Teto compartilhado com sgoa e sgrf: 1080 px de largura TOTAL da interface.
+  assert.match(tokens, /--content-ceiling:\s*1080px;/, 'teto de largura não é o teto compartilhado de 1080px');
+  const faltando = [];
+  for (const seletor of ['.shell', '.navbar']) {
+    const bloco = css.match(new RegExp(`\\${seletor}\\s*\\{([^{}]*)\\}`));
+    if (!bloco) {
+      faltando.push(`${seletor}: bloco não encontrado`);
+      continue;
+    }
+    if (!bloco[1].includes('var(--content-ceiling)')) faltando.push(`${seletor}: fora do teto`);
+  }
+  assert.deepEqual(faltando, [], faltando.join(' | '));
 });
 
 test('base.css cobre reduced-motion, [hidden] e foco visível', () => {

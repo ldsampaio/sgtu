@@ -130,8 +130,8 @@ transform de layout; press por `translateY` + sombra.
 | `.pilula` | bg tingida por status, border-2 ink, ícone 14 + rótulo |
 | `.alerta` | flex com ícone 20; erro = red-100/red-800; sucesso = mint; dica = canvas |
 | `.tabela` | th com bg canvas + uppercase; hairline `border-soft`; hover indigo .06 |
-| `.navbar` | **floating clay card** (sticky top 12px), bg card, border-3, nav items pill; ativo = primary-soft + border primary. **Teto de largura**: `calc(--content-max-width + 2×--spacing-4)`, centralizado — alinha com o conteúdo em vez de esticar até a tela |
-| `.shell` | coluna central limitada pelo mesmo teto. `--content-max-width` = soma dos componentes da linha mais larga do dashboard: 4 tiles de 200 + 3 gaps de 12 = **836** (+ padding 2×24) |
+| `.navbar` | **floating clay card** (sticky top 12px), bg card, border-3, nav items pill; ativo = primary-soft + border primary. **Teto de largura**: `--content-ceiling`, centralizado — alinha com o conteúdo em vez de esticar até a tela |
+| `.shell` | coluna central limitada pelo mesmo teto (`--content-ceiling`) — o **teto compartilhado de 1080 px** com sgoa e sgrf, que é a largura total máxima da interface. `--content-max-width` é o teto menos o padding lateral 2×24 = **1032**; a linha mais larga do dashboard (4 tiles de 200 + 3 gaps de 12) se reparte por essa coluna |
 | `.linha-tempo` | diamantes primário com border ink — trilha de eventos do ticket |
 | `.medidores` | bullet bar clay: trilha 16px border-2 ink + fill do token de status; **valor numérico sempre ao lado** (cor nunca é o único portador); trilha com `role="meter"` + `aria-valuenow/max`. Largura do fill vem de `:style` dinâmico (percentual de dados) — **única exceção aceita a style inline** |
 | `.upload` | campo clay com border-2 soft; o botão de enviar é `.botao`, nunca um drop-zone sem rótulo |
@@ -154,8 +154,9 @@ Verificado por teste em `frontend/tests/designSystem.test.js` — o checklist é
 - [x] `prefers-reduced-motion` respeitado (`base.css`)
 - [x] `[hidden]` com `display: none !important` (componentes clay são `display:flex`)
 - [x] States disabled/loading/empty estilizados (`.botao:disabled`, `.spinner`, `.linha-vazia`)
-- [ ] Testado visualmente em 375 / 768 / 1024 / 1440 px — **pendência de ambiente**: não há
-      navegador headless. Cobertura estática dos breakpoints 767/1023.
+- [x] Testado visualmente em 375 / 768 / 1024 / 1440 px — medido em navegador real por
+      `sa/scripts/headless` (Playwright): `.navbar` e `.shell` medem o teto de 1080 em 1440
+      e o viewport em 375/768/1024. Breakpoints 767/1023 cobertos.
 
 **Exceções registradas** (dimensões de layout que não são tokens): breakpoints 767/1023px.
 Tudo o mais vem de token. `validate-tokens.cjs` deve reportar exatamente essas duas.
